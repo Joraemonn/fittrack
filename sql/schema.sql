@@ -1,0 +1,64 @@
+CREATE DATABASE IF NOT EXISTS fittrack CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE fittrack;
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(120) NOT NULL,
+    email VARCHAR(190) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    age INT UNSIGNED DEFAULT NULL,
+    height_cm DECIMAL(5,2) DEFAULT NULL,
+    fitness_goal VARCHAR(120) NOT NULL,
+    profile_image VARCHAR(255) DEFAULT NULL,
+    measurement_units VARCHAR(40) NOT NULL DEFAULT 'metric',
+    timezone VARCHAR(80) NOT NULL DEFAULT 'Asia/Singapore',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS workouts (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    workout_date DATE NOT NULL,
+    exercise_name VARCHAR(120) NOT NULL,
+    muscle_group VARCHAR(80) NOT NULL,
+    sets INT UNSIGNED NOT NULL,
+    reps INT UNSIGNED NOT NULL,
+    weight_used DECIMAL(6,2) DEFAULT NULL,
+    notes TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_workouts_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS meals (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    meal_date DATE NOT NULL,
+    meal_time TIME DEFAULT NULL,
+    meal_name VARCHAR(120) NOT NULL,
+    calories INT UNSIGNED NOT NULL,
+    protein_g DECIMAL(6,2) DEFAULT NULL,
+    carbs_g DECIMAL(6,2) DEFAULT NULL,
+    fats_g DECIMAL(6,2) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_meals_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS running_logs (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    run_date DATE NOT NULL,
+    distance_km DECIMAL(6,2) NOT NULL,
+    duration_minutes DECIMAL(6,2) NOT NULL,
+    pace_display VARCHAR(20) NOT NULL,
+    calories_burned INT UNSIGNED DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_running_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    email VARCHAR(190) NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

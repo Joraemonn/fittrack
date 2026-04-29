@@ -1,0 +1,5 @@
+USE fittrack;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS measurement_units VARCHAR(40) NOT NULL DEFAULT 'metric',
+ADD COLUMN IF NOT EXISTS timezone VARCHAR(80) NOT NULL DEFAULT 'Asia/Singapore';

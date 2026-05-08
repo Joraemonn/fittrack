@@ -18,14 +18,32 @@ $measurementOptions = [
     'hybrid' => 'Hybrid / Canadian (lbs / km / kcal / C)',
 ];
 $timezoneOptions = timezone_identifiers_list();
+$selectedProfileUnits = (string) ($user['measurement_units'] ?? 'metric');
+
+if (!array_key_exists($selectedProfileUnits, $measurementOptions)) {
+    $selectedProfileUnits = 'metric';
+}
+
+$heightDisplay = '';
+$weightDisplay = '';
+
+if (($user['height_cm'] ?? '') !== '') {
+    $heightDisplay = number_format(height_from_cm((float) $user['height_cm'], $selectedProfileUnits), 2, '.', '');
+}
+
+if (($user['current_weight_kg'] ?? '') !== '') {
+    $weightDisplay = number_format(weight_from_kg((float) $user['current_weight_kg'], $selectedProfileUnits), 2, '.', '');
+}
 
 if (is_post()) {
     $fullName = trim($_POST['full_name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $age = trim($_POST['age'] ?? '');
-    $heightCm = trim($_POST['height_cm'] ?? '');
+    $heightValue = trim($_POST['height_cm'] ?? '');
+    $weightValue = trim($_POST['current_weight_kg'] ?? '');
     $goal = trim($_POST['fitness_goal'] ?? '');
     $measurementUnits = trim($_POST['measurement_units'] ?? 'metric');
+    $profileValueUnits = trim($_POST['profile_value_units'] ?? $measurementUnits);
     $timezone = trim($_POST['timezone'] ?? 'Asia/Singapore');
 
     validate_required($errors, 'full_name', 'Full name', $fullName);
@@ -38,6 +56,10 @@ if (is_post()) {
 
     if (!array_key_exists($measurementUnits, $measurementOptions)) {
         $errors['measurement_units'] = 'Please choose a valid measurement unit.';
+    }
+
+    if (!array_key_exists($profileValueUnits, $measurementOptions)) {
+        $profileValueUnits = $measurementUnits;
     }
 
     if (!in_array($timezone, $timezoneOptions, true)) {
@@ -58,12 +80,13 @@ if (is_post()) {
             if ($stmt->fetch()) {
                 $errors['email'] = 'Another account is already using this email.';
             } else {
-                $update = $pdo->prepare('UPDATE users SET full_name = :full_name, email = :email, age = :age, height_cm = :height_cm, fitness_goal = :fitness_goal, profile_image = :profile_image, measurement_units = :measurement_units, timezone = :timezone WHERE id = :id');
+                $update = $pdo->prepare('UPDATE users SET full_name = :full_name, email = :email, age = :age, height_cm = :height_cm, current_weight_kg = :current_weight_kg, fitness_goal = :fitness_goal, profile_image = :profile_image, measurement_units = :measurement_units, timezone = :timezone WHERE id = :id');
                 $update->execute([
                     'full_name' => $fullName,
                     'email' => $email,
                     'age' => $age !== '' ? (int) $age : null,
-                    'height_cm' => $heightCm !== '' ? (float) $heightCm : null,
+                    'height_cm' => $heightValue !== '' ? height_to_cm((float) $heightValue, $profileValueUnits) : null,
+                    'current_weight_kg' => $weightValue !== '' ? weight_to_kg((float) $weightValue, $profileValueUnits) : null,
                     'fitness_goal' => $goal,
                     'profile_image' => $profileImagePath,
                     'measurement_units' => $measurementUnits,
@@ -93,13 +116,25 @@ try {
     $dbError = $dbError ?: 'Unable to load profile details right now.';
 }
 
+$selectedProfileUnits = old('profile_value_units', old('measurement_units', (string) ($user['measurement_units'] ?? 'metric')));
+
+if (!array_key_exists($selectedProfileUnits, $measurementOptions)) {
+    $selectedProfileUnits = 'metric';
+}
+
+$heightDisplay = ($user['height_cm'] ?? '') !== ''
+    ? number_format(height_from_cm((float) $user['height_cm'], $selectedProfileUnits), 2, '.', '')
+    : '';
+$weightDisplay = ($user['current_weight_kg'] ?? '') !== ''
+    ? number_format(weight_from_kg((float) $user['current_weight_kg'], $selectedProfileUnits), 2, '.', '')
+    : '';
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">
     <div class="container">
         <span class="eyebrow">Profile</span>
         <h1>Manage your personal fitness details</h1>
-        <p>Update your core profile information so your account reflects your goals and latest stats.</p>
     </div>
 </section>
 
@@ -128,7 +163,6 @@ require_once __DIR__ . '/includes/header.php';
                     </label>
                     <div>
                         <h2><?= e($user['full_name'] ?? 'FitTrack User') ?></h2>
-                        <p class="muted"><?= e($user['email'] ?? '') ?></p>
                     </div>
                 </div>
             </div>
@@ -136,35 +170,40 @@ require_once __DIR__ . '/includes/header.php';
             <div class="profile-edit-panel">
                 <?php if ($success): ?><div class="alert success"><?= e($success) ?></div><?php endif; ?>
                 <?php if ($dbError): ?><div class="alert error"><?= e($dbError) ?></div><?php endif; ?>
-                <form method="post" enctype="multipart/form-data">
+                <form method="post" enctype="multipart/form-data" data-profile-form>
+                    <input type="hidden" name="profile_value_units" value="<?= e($selectedProfileUnits) ?>" data-profile-value-units>
                     <section id="profile-information" class="settings-section" data-settings-panel="profile-information">
                         <div>
-                            <h2>Profile Information</h2>
+                            <h2>Edit Profile Information</h2>
                             <p class="section-subtitle">Keep your account details and fitness goal up to date.</p>
                         </div>
-                        <div class="form-grid">
-                            <div class="field">
+                        <div class="form-grid profile-form-stack">
+                            <div class="field field-full">
                                 <label for="full_name">Name</label>
                                 <input id="full_name" name="full_name" value="<?= e(old('full_name', (string) ($user['full_name'] ?? ''))) ?>">
                                 <?php if (isset($errors['full_name'])): ?><span class="error-text"><?= e($errors['full_name']) ?></span><?php endif; ?>
                             </div>
-                            <div class="field">
+                            <div class="field field-full">
+                                <label for="age">Age</label>
+                                <input id="age" type="number" name="age" value="<?= e(old('age', (string) ($user['age'] ?? ''))) ?>">
+                            </div>
+                            <div class="field field-full">
                                 <label for="email">Email</label>
                                 <input id="email" type="email" name="email" value="<?= e(old('email', (string) ($user['email'] ?? ''))) ?>">
                                 <?php if (isset($errors['email'])): ?><span class="error-text"><?= e($errors['email']) ?></span><?php endif; ?>
                             </div>
-                            <div class="field">
-                                <label for="age">Age</label>
-                                <input id="age" type="number" name="age" value="<?= e(old('age', (string) ($user['age'] ?? ''))) ?>">
+                            <div class="field field-full">
+                                <label for="height_cm" data-height-label>Height (<?= e(height_unit($selectedProfileUnits)) ?>)</label>
+                                <input id="height_cm" type="number" step="0.01" name="height_cm" value="<?= e(old('height_cm', $heightDisplay)) ?>" data-height-input>
                             </div>
-                            <div class="field">
-                                <label for="height_cm">Height (cm)</label>
-                                <input id="height_cm" type="number" step="0.01" name="height_cm" value="<?= e(old('height_cm', (string) ($user['height_cm'] ?? ''))) ?>">
+                            <div class="field field-full">
+                                <label for="current_weight_kg" data-weight-label>Weight (<?= e(weight_unit($selectedProfileUnits)) ?>)</label>
+                                <input id="current_weight_kg" type="number" step="0.01" name="current_weight_kg" value="<?= e(old('current_weight_kg', $weightDisplay)) ?>" data-weight-input>
                             </div>
                             <div class="field">
                                 <input id="profile_image" class="sr-only-file" type="file" name="profile_image" accept=".jpg,.jpeg,.png,.gif,.webp">
                             </div>
-                            <div class="field">
+                            <div class="field field-full">
                                 <label for="fitness_goal">Fitness Goal</label>
                                 <input id="fitness_goal" name="fitness_goal" value="<?= e(old('fitness_goal', (string) ($user['fitness_goal'] ?? ''))) ?>">
                                 <?php if (isset($errors['fitness_goal'])): ?><span class="error-text"><?= e($errors['fitness_goal']) ?></span><?php endif; ?>
@@ -181,8 +220,8 @@ require_once __DIR__ . '/includes/header.php';
                             <div class="field">
                                 <label for="measurement_units">Measurement Units</label>
                                 <select id="measurement_units" name="measurement_units">
+                                    <?php $selectedMeasurement = old('measurement_units', (string) ($user['measurement_units'] ?? 'metric')); ?>
                                     <?php foreach ($measurementOptions as $value => $label): ?>
-                                        <?php $selectedMeasurement = old('measurement_units', (string) ($user['measurement_units'] ?? 'metric')); ?>
                                         <option value="<?= e($value) ?>" <?= $selectedMeasurement === $value ? 'selected' : '' ?>><?= e($label) ?></option>
                                     <?php endforeach; ?>
                                 </select>

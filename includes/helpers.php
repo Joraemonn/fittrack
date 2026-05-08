@@ -96,9 +96,32 @@ function distance_unit(): string
     return measurement_units() === 'imperial' ? 'mi' : 'km';
 }
 
-function weight_unit(): string
+function weight_unit(?string $units = null): string
 {
-    return measurement_units() === 'metric' ? 'kg' : 'lb';
+    $units = $units ?? measurement_units();
+
+    return $units === 'metric' ? 'kg' : 'lb';
+}
+
+function height_unit(?string $units = null): string
+{
+    $units = $units ?? measurement_units();
+
+    return $units === 'imperial' ? 'in' : 'cm';
+}
+
+function height_from_cm(float $centimeters, ?string $units = null): float
+{
+    $units = $units ?? measurement_units();
+
+    return $units === 'imperial' ? $centimeters / 2.54 : $centimeters;
+}
+
+function height_to_cm(float $height, ?string $units = null): float
+{
+    $units = $units ?? measurement_units();
+
+    return $units === 'imperial' ? $height * 2.54 : $height;
 }
 
 function distance_from_km(float $kilometers): float
@@ -111,14 +134,18 @@ function distance_to_km(float $distance): float
     return measurement_units() === 'imperial' ? $distance / 0.621371 : $distance;
 }
 
-function weight_from_kg(float $kilograms): float
+function weight_from_kg(float $kilograms, ?string $units = null): float
 {
-    return measurement_units() === 'metric' ? $kilograms : $kilograms * 2.20462;
+    $units = $units ?? measurement_units();
+
+    return $units === 'metric' ? $kilograms : $kilograms * 2.20462;
 }
 
-function weight_to_kg(float $weight): float
+function weight_to_kg(float $weight, ?string $units = null): float
 {
-    return measurement_units() === 'metric' ? $weight : $weight / 2.20462;
+    $units = $units ?? measurement_units();
+
+    return $units === 'metric' ? $weight : $weight / 2.20462;
 }
 
 function format_distance(float $kilometers, int $decimals = 1): string
@@ -160,7 +187,7 @@ function validate_required(array &$errors, string $field, string $label, ?string
 
 function refresh_session_user(PDO $pdo, int $userId): void
 {
-    $stmt = $pdo->prepare('SELECT id, full_name, email, age, height_cm, fitness_goal, profile_image, measurement_units, timezone FROM users WHERE id = :id');
+    $stmt = $pdo->prepare('SELECT id, full_name, email, age, height_cm, current_weight_kg, fitness_goal, profile_image, measurement_units, timezone FROM users WHERE id = :id');
     $stmt->execute(['id' => $userId]);
     $user = $stmt->fetch();
 

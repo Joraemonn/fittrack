@@ -12,8 +12,15 @@ $dbError = null;
 $user = current_user();
 
 $workoutsThisWeek = 0;
+$workoutsLastWeek = 0;
 $caloriesToday = 0;
+$caloriesYesterday = 0;
 $distanceThisWeek = 0;
+$distanceLastWeek = 0;
+$latestRunDistance = null;
+$previousRunDistance = null;
+$latestRunDate = null;
+$previousRunDate = null;
 $recentActivity = [];
 $workoutLabels = [];
 $workoutValues = [];
@@ -21,6 +28,49 @@ $runLabels = [];
 $runDistanceValues = [];
 $runDurationValues = [];
 $distanceUnit = distance_unit();
+$timezoneName = (string) ($user['timezone'] ?? 'Asia/Singapore');
+
+if (!in_array($timezoneName, timezone_identifiers_list(), true)) {
+    $timezoneName = 'Asia/Singapore';
+}
+
+$todayDisplay = (new DateTime('now', new DateTimeZone($timezoneName)))->format('l, j F Y');
+
+$formatTrend = static function (float $current, float $previous, string $suffix = ''): string {
+    $difference = $current - $previous;
+
+    if (abs($difference) < 0.01) {
+        return 'No change vs last week';
+    }
+
+    $arrow = $difference > 0 ? '↑' : '↓';
+    $amount = abs($difference);
+    $formatted = abs($amount - round($amount)) < 0.01 ? number_format($amount, 0) : number_format($amount, 1);
+
+    return $arrow . ' ' . $formatted . $suffix . ' vs last week';
+};
+
+$buildTrend = static function (float $current, float $previous, string $suffix = '', string $compareLabel = 'last week'): array {
+    $difference = $current - $previous;
+
+    if (abs($difference) < 0.01) {
+        return [
+            'class' => 'neutral',
+            'value' => '',
+            'context' => 'No change vs ' . $compareLabel,
+        ];
+    }
+
+    $arrow = $difference > 0 ? '↑' : '↓';
+    $amount = abs($difference);
+    $formatted = abs($amount - round($amount)) < 0.01 ? number_format($amount, 0) : number_format($amount, 1);
+
+    return [
+        'class' => $difference > 0 ? 'positive' : 'negative',
+        'value' => $arrow . ' ' . $formatted . $suffix,
+        'context' => 'vs ' . $compareLabel,
+    ];
+};
 
 try {
     $pdo = db();
@@ -30,13 +80,39 @@ try {
     $stmt->execute(['user_id' => $userId]);
     $workoutsThisWeek = (int) $stmt->fetchColumn();
 
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM workouts WHERE user_id = :user_id AND YEARWEEK(workout_date, 1) = YEARWEEK(CURDATE() - INTERVAL 1 WEEK, 1)');
+    $stmt->execute(['user_id' => $userId]);
+    $workoutsLastWeek = (int) $stmt->fetchColumn();
+
     $stmt = $pdo->prepare('SELECT COALESCE(SUM(calories), 0) FROM meals WHERE user_id = :user_id AND meal_date = CURDATE()');
     $stmt->execute(['user_id' => $userId]);
     $caloriesToday = (int) $stmt->fetchColumn();
 
+    $stmt = $pdo->prepare('SELECT COALESCE(SUM(calories), 0) FROM meals WHERE user_id = :user_id AND meal_date = CURDATE() - INTERVAL 1 DAY');
+    $stmt->execute(['user_id' => $userId]);
+    $caloriesYesterday = (int) $stmt->fetchColumn();
+
     $stmt = $pdo->prepare('SELECT COALESCE(SUM(distance_km), 0) FROM running_logs WHERE user_id = :user_id AND YEARWEEK(run_date, 1) = YEARWEEK(CURDATE(), 1)');
     $stmt->execute(['user_id' => $userId]);
     $distanceThisWeek = (float) $stmt->fetchColumn();
+
+    $stmt = $pdo->prepare('SELECT COALESCE(SUM(distance_km), 0) FROM running_logs WHERE user_id = :user_id AND YEARWEEK(run_date, 1) = YEARWEEK(CURDATE() - INTERVAL 1 WEEK, 1)');
+    $stmt->execute(['user_id' => $userId]);
+    $distanceLastWeek = (float) $stmt->fetchColumn();
+
+    $stmt = $pdo->prepare('SELECT run_date, distance_km FROM running_logs WHERE user_id = :user_id ORDER BY run_date DESC, id DESC LIMIT 2');
+    $stmt->execute(['user_id' => $userId]);
+    $recentRuns = $stmt->fetchAll();
+
+    if (isset($recentRuns[0])) {
+        $latestRunDate = (string) $recentRuns[0]['run_date'];
+        $latestRunDistance = (float) $recentRuns[0]['distance_km'];
+    }
+
+    if (isset($recentRuns[1])) {
+        $previousRunDate = (string) $recentRuns[1]['run_date'];
+        $previousRunDistance = (float) $recentRuns[1]['distance_km'];
+    }
 
     $recentSets = [];
 
@@ -84,12 +160,30 @@ try {
 }
 
 require_once __DIR__ . '/includes/header.php';
+$workoutTrend = $buildTrend($workoutsThisWeek, $workoutsLastWeek);
+$calorieTrend = $caloriesYesterday > 0
+    ? $buildTrend($caloriesToday, $caloriesYesterday, ' kcal', 'yesterday')
+    : ['class' => 'neutral', 'value' => '', 'context' => 'No meals logged yet'];
+$distanceTrend = ['class' => 'neutral', 'value' => '', 'context' => 'No recent comparison'];
+
+if ($latestRunDate !== null && $previousRunDate !== null && $latestRunDistance !== null && $previousRunDistance !== null) {
+    $latestDate = new DateTime($latestRunDate);
+    $previousDate = new DateTime($previousRunDate);
+    $daysBetweenRuns = (int) $previousDate->diff($latestDate)->format('%a');
+
+    if ($daysBetweenRuns <= 7) {
+        $distanceTrend = $buildTrend(distance_from_km($latestRunDistance), distance_from_km($previousRunDistance), ' ' . $distanceUnit, 'previous run');
+    }
+}
 ?>
 <section class="page-hero">
     <div class="container">
         <span class="eyebrow">Dashboard</span>
         <h1>Welcome back, <?= e($user['full_name'] ?? 'Athlete') ?>.</h1>
-        <p>Your latest fitness summary lives here, from workouts and calories to running progress.</p>
+        <div class="dashboard-hero-meta">
+            <p>Everything, all in one place.</p>
+            <time datetime="<?= e((new DateTime('now', new DateTimeZone($timezoneName)))->format('Y-m-d')) ?>"><?= e($todayDisplay) ?></time>
+        </div>
     </div>
 </section>
 
@@ -106,14 +200,26 @@ require_once __DIR__ . '/includes/header.php';
             <article class="stat-card">
                 <span class="stat-label">Workouts This Week</span>
                 <p class="stat-value"><?= e((string) $workoutsThisWeek) ?></p>
+                <p class="stat-trend <?= e($workoutTrend['class']) ?>">
+                    <?php if ($workoutTrend['value'] !== ''): ?><span><?= e($workoutTrend['value']) ?></span><?php endif; ?>
+                    <?= e($workoutTrend['context']) ?>
+                </p>
             </article>
             <article class="stat-card">
                 <span class="stat-label">Calories Today</span>
                 <p class="stat-value"><?= e((string) $caloriesToday) ?></p>
+                <p class="stat-trend <?= e($calorieTrend['class']) ?>">
+                    <?php if ($calorieTrend['value'] !== ''): ?><span><?= e($calorieTrend['value']) ?></span><?php endif; ?>
+                    <?= e($calorieTrend['context']) ?>
+                </p>
             </article>
             <article class="stat-card">
                 <span class="stat-label">Distance This Week</span>
                 <p class="stat-value"><?= e(format_distance($distanceThisWeek)) ?></p>
+                <p class="stat-trend <?= e($distanceTrend['class']) ?>">
+                    <?php if ($distanceTrend['value'] !== ''): ?><span><?= e($distanceTrend['value']) ?></span><?php endif; ?>
+                    <?= e($distanceTrend['context']) ?>
+                </p>
             </article>
         </div>
 
@@ -144,15 +250,17 @@ require_once __DIR__ . '/includes/header.php';
             </div>
 
             <article class="list-panel">
-                <h3>Recent Activity</h3>
-                <p class="section-subtitle">Your latest logged fitness actions across trackers.</p>
+                <h3>Recent Activities</h3>
+                <p class="section-subtitle">Latest logged entries</p>
                 <?php if ($recentActivity): ?>
                     <div class="recent-list">
                         <?php foreach ($recentActivity as $activity): ?>
                             <div class="recent-item">
-                                <strong><?= e($activity['title']) ?></strong>
-                                <p class="muted"><?= e($activity['meta']) ?></p>
-                                <small class="muted"><?= e(date('F j, Y', strtotime($activity['date']))) ?></small>
+                                <div>
+                                    <strong><?= e($activity['title']) ?></strong>
+                                    <p class="muted"><?= e($activity['meta']) ?></p>
+                                </div>
+                                <time class="recent-date" datetime="<?= e($activity['date']) ?>"><?= e(date('M j', strtotime($activity['date']))) ?></time>
                             </div>
                         <?php endforeach; ?>
                     </div>

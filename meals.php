@@ -12,6 +12,15 @@ $dbError = null;
 $success = get_flash('success');
 $meals = [];
 $userId = (int) current_user()['id'];
+$timezoneName = (string) (current_user()['timezone'] ?? 'Asia/Singapore');
+
+if (!in_array($timezoneName, timezone_identifiers_list(), true)) {
+    $timezoneName = 'Asia/Singapore';
+}
+
+$today = new DateTime('now', new DateTimeZone($timezoneName));
+$todayDisplay = $today->format('l, j F Y');
+$todayMachine = $today->format('Y-m-d');
 
 if (is_post()) {
     $mealDate = trim($_POST['meal_date'] ?? '');
@@ -66,8 +75,11 @@ require_once __DIR__ . '/includes/header.php';
 <section class="page-hero">
     <div class="container">
         <span class="eyebrow">Meal Tracker</span>
-        <h1>Stay consistent with nutrition logging</h1>
-        <p>Save meals with calories and macros so you can connect your nutrition to your training progress.</p>
+        <h1>Make every meal count</h1>
+        <div class="dashboard-hero-meta">
+            <p>Track every meal and fuel the grind</p>
+            <time datetime="<?= e($todayMachine) ?>"><?= e($todayDisplay) ?></time>
+        </div>
     </div>
 </section>
 

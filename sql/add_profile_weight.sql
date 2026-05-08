@@ -1,0 +1,4 @@
+USE fittrack;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS current_weight_kg DECIMAL(6,2) DEFAULT NULL;

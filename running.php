@@ -19,6 +19,15 @@ $longestRun = null;
 $fastestRun = null;
 $userId = (int) current_user()['id'];
 $distanceUnit = distance_unit();
+$timezoneName = (string) (current_user()['timezone'] ?? 'Asia/Singapore');
+
+if (!in_array($timezoneName, timezone_identifiers_list(), true)) {
+    $timezoneName = 'Asia/Singapore';
+}
+
+$today = new DateTime('now', new DateTimeZone($timezoneName));
+$todayDisplay = $today->format('l, j F Y');
+$todayMachine = $today->format('Y-m-d');
 
 if (is_post()) {
     $runDate = trim($_POST['run_date'] ?? '');
@@ -101,8 +110,11 @@ require_once __DIR__ . '/includes/header.php';
 <section class="page-hero">
     <div class="container">
         <span class="eyebrow">Running Tracker</span>
-        <h1>Track distance, time, and pace</h1>
-        <p>Save each run and quickly review your best sessions, longest distances, and pace improvements.</p>
+        <h1>Every run becomes a record</h1>
+        <div class="dashboard-hero-meta">
+            <p>Every mile matters and every pace is progress</p>
+            <time datetime="<?= e($todayMachine) ?>"><?= e($todayDisplay) ?></time>
+        </div>
     </div>
 </section>
 

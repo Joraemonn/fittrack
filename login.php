@@ -20,7 +20,7 @@ if (is_post()) {
 
     if (!$errors) {
         try {
-            $stmt = db()->prepare('SELECT id, full_name, email, password_hash, age, height_cm, fitness_goal, profile_image, measurement_units, timezone FROM users WHERE email = :email LIMIT 1');
+            $stmt = db()->prepare('SELECT id, full_name, email, password_hash, age, height_cm, current_weight_kg, fitness_goal, profile_image, measurement_units, timezone FROM users WHERE email = :email LIMIT 1');
             $stmt->execute(['email' => $email]);
             $user = $stmt->fetch();
 

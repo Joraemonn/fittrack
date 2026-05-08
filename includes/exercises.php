@@ -13,31 +13,59 @@ function exercise_catalog(): array
         'core' => exercise_illustration('core'),
     ];
 
-    return [
-        ['name' => 'Bench Press', 'muscle_group' => 'Chest', 'image_url' => $illustrations['push']],
-        ['name' => 'Incline Bench Press', 'muscle_group' => 'Upper Chest', 'image_url' => $illustrations['push']],
-        ['name' => 'Pec Fly', 'muscle_group' => 'Chest', 'image_url' => $illustrations['push']],
-        ['name' => 'Push Up', 'muscle_group' => 'Chest', 'image_url' => $illustrations['core']],
-        ['name' => 'Squat', 'muscle_group' => 'Quadriceps', 'image_url' => $illustrations['legs']],
-        ['name' => 'Leg Press', 'muscle_group' => 'Quadriceps', 'image_url' => $illustrations['legs']],
-        ['name' => 'Leg Extension', 'muscle_group' => 'Quadriceps', 'image_url' => $illustrations['legs']],
-        ['name' => 'Leg Curl', 'muscle_group' => 'Hamstrings', 'image_url' => $illustrations['legs']],
-        ['name' => 'Deadlift', 'muscle_group' => 'Back', 'image_url' => $illustrations['hinge']],
-        ['name' => 'Romanian Deadlift', 'muscle_group' => 'Hamstrings', 'image_url' => $illustrations['hinge']],
-        ['name' => 'Lat Pulldown', 'muscle_group' => 'Back', 'image_url' => $illustrations['pull']],
-        ['name' => 'Seated Cable Row', 'muscle_group' => 'Back', 'image_url' => $illustrations['pull']],
-        ['name' => 'Pull Up', 'muscle_group' => 'Back', 'image_url' => $illustrations['pull']],
-        ['name' => 'Shoulder Press', 'muscle_group' => 'Shoulders', 'image_url' => $illustrations['push']],
-        ['name' => 'Lateral Raise', 'muscle_group' => 'Shoulders', 'image_url' => $illustrations['arms']],
-        ['name' => 'Face Pull', 'muscle_group' => 'Rear Delts', 'image_url' => $illustrations['pull']],
-        ['name' => 'Bicep Curl', 'muscle_group' => 'Biceps', 'image_url' => $illustrations['arms']],
-        ['name' => 'Hammer Curl', 'muscle_group' => 'Biceps', 'image_url' => $illustrations['arms']],
-        ['name' => 'Tricep Pushdown', 'muscle_group' => 'Triceps', 'image_url' => $illustrations['arms']],
-        ['name' => 'Overhead Tricep Extension', 'muscle_group' => 'Triceps', 'image_url' => $illustrations['arms']],
-        ['name' => 'Calf Raise', 'muscle_group' => 'Calves', 'image_url' => $illustrations['legs']],
-        ['name' => 'Plank', 'muscle_group' => 'Core', 'image_url' => $illustrations['core']],
-        ['name' => 'Crunch', 'muscle_group' => 'Core', 'image_url' => $illustrations['core']],
-    ];
+    return array_map(static function (array $exercise): array {
+        $exercise['muscleGroup'] = $exercise['muscle_group'];
+        $exercise['targetMuscles'] = [$exercise['muscle_group']];
+        $exercise['secondaryMuscles'] = [];
+        $exercise['bodyPart'] = $exercise['muscle_group'];
+        $exercise['equipment'] = '';
+        $exercise['instructions'] = '';
+        $exercise['imageUrl'] = $exercise['image_url'];
+        $exercise['gifUrl'] = '';
+
+        return $exercise;
+    }, [
+        ['name' => 'Plank', 'muscle' => 'abdominals', 'muscle_group' => 'Abdominals', 'image_url' => $illustrations['core']],
+        ['name' => 'Crunch', 'muscle' => 'abdominals', 'muscle_group' => 'Abdominals', 'image_url' => $illustrations['core']],
+        ['name' => 'Hanging Knee Raise', 'muscle' => 'abdominals', 'muscle_group' => 'Abdominals', 'image_url' => $illustrations['core']],
+        ['name' => 'Hip Abduction Machine', 'muscle' => 'abductors', 'muscle_group' => 'Abductors', 'image_url' => $illustrations['legs']],
+        ['name' => 'Side Lying Leg Raise', 'muscle' => 'abductors', 'muscle_group' => 'Abductors', 'image_url' => $illustrations['legs']],
+        ['name' => 'Hip Adduction Machine', 'muscle' => 'adductors', 'muscle_group' => 'Adductors', 'image_url' => $illustrations['legs']],
+        ['name' => 'Cable Hip Adduction', 'muscle' => 'adductors', 'muscle_group' => 'Adductors', 'image_url' => $illustrations['legs']],
+        ['name' => 'Bicep Curl', 'muscle' => 'biceps', 'muscle_group' => 'Biceps', 'image_url' => $illustrations['arms']],
+        ['name' => 'Hammer Curl', 'muscle' => 'biceps', 'muscle_group' => 'Biceps', 'image_url' => $illustrations['arms']],
+        ['name' => 'Preacher Curl', 'muscle' => 'biceps', 'muscle_group' => 'Biceps', 'image_url' => $illustrations['arms']],
+        ['name' => 'Calf Raise', 'muscle' => 'calves', 'muscle_group' => 'Calves', 'image_url' => $illustrations['legs']],
+        ['name' => 'Seated Calf Raise', 'muscle' => 'calves', 'muscle_group' => 'Calves', 'image_url' => $illustrations['legs']],
+        ['name' => 'Bench Press', 'muscle' => 'chest', 'muscle_group' => 'Chest', 'image_url' => $illustrations['push']],
+        ['name' => 'Incline Bench Press', 'muscle' => 'chest', 'muscle_group' => 'Chest', 'image_url' => $illustrations['push']],
+        ['name' => 'Incline Bench Press (Smith Machine)', 'muscle' => 'chest', 'muscle_group' => 'Chest', 'image_url' => $illustrations['push']],
+        ['name' => 'Incline Bench Press (Barbell)', 'muscle' => 'chest', 'muscle_group' => 'Chest', 'image_url' => $illustrations['push']],
+        ['name' => 'Incline Bench Press (Dumbbell)', 'muscle' => 'chest', 'muscle_group' => 'Chest', 'image_url' => $illustrations['push']],
+        ['name' => 'Pec Fly', 'muscle' => 'chest', 'muscle_group' => 'Chest', 'image_url' => $illustrations['push']],
+        ['name' => 'Push Up', 'muscle' => 'chest', 'muscle_group' => 'Chest', 'image_url' => $illustrations['core']],
+        ['name' => 'Reverse Curl', 'muscle' => 'forearms', 'muscle_group' => 'Forearms', 'image_url' => $illustrations['arms']],
+        ['name' => 'Wrist Curl', 'muscle' => 'forearms', 'muscle_group' => 'Forearms', 'image_url' => $illustrations['arms']],
+        ['name' => 'Hip Thrust', 'muscle' => 'glutes', 'muscle_group' => 'Glutes', 'image_url' => $illustrations['legs']],
+        ['name' => 'Glute Bridge', 'muscle' => 'glutes', 'muscle_group' => 'Glutes', 'image_url' => $illustrations['legs']],
+        ['name' => 'Leg Curl', 'muscle' => 'hamstrings', 'muscle_group' => 'Hamstrings', 'image_url' => $illustrations['legs']],
+        ['name' => 'Romanian Deadlift', 'muscle' => 'hamstrings', 'muscle_group' => 'Hamstrings', 'image_url' => $illustrations['hinge']],
+        ['name' => 'Lat Pulldown', 'muscle' => 'lats', 'muscle_group' => 'Lats', 'image_url' => $illustrations['pull']],
+        ['name' => 'Pull Up', 'muscle' => 'lats', 'muscle_group' => 'Lats', 'image_url' => $illustrations['pull']],
+        ['name' => 'Deadlift', 'muscle' => 'lower_back', 'muscle_group' => 'Lower Back', 'image_url' => $illustrations['hinge']],
+        ['name' => 'Back Extension', 'muscle' => 'lower_back', 'muscle_group' => 'Lower Back', 'image_url' => $illustrations['hinge']],
+        ['name' => 'Seated Cable Row', 'muscle' => 'middle_back', 'muscle_group' => 'Middle Back', 'image_url' => $illustrations['pull']],
+        ['name' => 'Face Pull', 'muscle' => 'middle_back', 'muscle_group' => 'Middle Back', 'image_url' => $illustrations['pull']],
+        ['name' => 'Neck Flexion', 'muscle' => 'neck', 'muscle_group' => 'Neck', 'image_url' => $illustrations['arms']],
+        ['name' => 'Neck Extension', 'muscle' => 'neck', 'muscle_group' => 'Neck', 'image_url' => $illustrations['arms']],
+        ['name' => 'Squat', 'muscle' => 'quadriceps', 'muscle_group' => 'Quadriceps', 'image_url' => $illustrations['legs']],
+        ['name' => 'Leg Press', 'muscle' => 'quadriceps', 'muscle_group' => 'Quadriceps', 'image_url' => $illustrations['legs']],
+        ['name' => 'Leg Extension', 'muscle' => 'quadriceps', 'muscle_group' => 'Quadriceps', 'image_url' => $illustrations['legs']],
+        ['name' => 'Shrug', 'muscle' => 'traps', 'muscle_group' => 'Traps', 'image_url' => $illustrations['pull']],
+        ['name' => 'Upright Row', 'muscle' => 'traps', 'muscle_group' => 'Traps', 'image_url' => $illustrations['pull']],
+        ['name' => 'Tricep Pushdown', 'muscle' => 'triceps', 'muscle_group' => 'Triceps', 'image_url' => $illustrations['arms']],
+        ['name' => 'Overhead Tricep Extension', 'muscle' => 'triceps', 'muscle_group' => 'Triceps', 'image_url' => $illustrations['arms']],
+    ]);
 }
 
 function exercise_illustration(string $type): string

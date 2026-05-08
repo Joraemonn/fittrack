@@ -76,7 +76,7 @@ require_once __DIR__ . '/includes/header.php';
 <section class="auth-layout">
     <div class="auth-card">
         <span class="eyebrow">Create Account</span>
-        <h1>Start tracking your fitness journey</h1>
+        <h1>Start tracking<br>your fitness journey</h1>
         <p class="section-copy">Create a personal FitTrack account to log workouts, meals, weight, and running progress.</p>
         <?php if ($dbError): ?>
             <div class="alert error"><?= e($dbError) ?></div>

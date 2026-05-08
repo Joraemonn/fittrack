@@ -5,6 +5,8 @@ declare(strict_types=1);
 $pageTitle = $pageTitle ?? APP_NAME;
 $pageDescription = $pageDescription ?? 'Track workouts, meals, and running progress in one place.';
 $authUser = current_user();
+$bodyClass = $authUser ? 'app-experience' : 'public-experience';
+$bodyClass .= page_is_active('index.php') ? ' home-page' : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -16,10 +18,10 @@ $authUser = current_user();
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= e((string) filemtime(__DIR__ . '/../assets/css/style.css')) ?>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="<?= e($bodyClass) ?>">
 <div class="site-shell">
     <header class="site-header">
         <div class="container nav-wrap">
@@ -46,6 +48,11 @@ $authUser = current_user();
                         <a href="logout.php" class="nav-button">Logout</a>
                     </nav>
                 <?php else: ?>
+                    <nav class="site-nav main-nav">
+                        <a href="index.php" class="<?= page_is_active('index.php') ? 'active' : '' ?>">Home</a>
+                        <a href="index.php#features">Features</a>
+                        <a href="contact.php" class="<?= page_is_active('contact.php') ? 'active' : '' ?>">Contact</a>
+                    </nav>
                     <nav class="site-nav account-nav">
                         <a href="login.php" class="<?= page_is_active('login.php') ? 'active' : '' ?>">Login</a>
                         <a href="register.php" class="nav-button">Register</a>

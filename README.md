@@ -16,3 +16,9 @@ FitTrack is a PHP + MySQL fitness tracking website for logging workouts, meals, 
 - Workout, meal, and running log forms with history tables
 - Profile editing with optional image upload
 - Contact form that stores messages in the database
+
+## Exercise Data
+
+FitTrack uses API Ninjas as the main workout exercise API. API Ninjas provides exercise text data such as name, muscle group, type, equipment, and instructions.
+
+The workout picker is intentionally text-first: it shows the exercise name and target muscle group only. Browsing and searching use the PHP API Ninjas proxy, including an all-muscles browse mode that combines API results across the supported muscle categories. The local exercise catalogue is only used as a fallback if the API cannot be reached.

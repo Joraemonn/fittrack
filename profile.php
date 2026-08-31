@@ -128,6 +128,8 @@ $heightDisplay = ($user['height_cm'] ?? '') !== ''
 $weightDisplay = ($user['current_weight_kg'] ?? '') !== ''
     ? number_format(weight_from_kg((float) $user['current_weight_kg'], $selectedProfileUnits), 2, '.', '')
     : '';
+$profileImage = (string) ($user['profile_image'] ?? '');
+$profileImageExists = $profileImage !== '' && is_file(__DIR__ . '/' . ltrim($profileImage, '/'));
 
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -148,12 +150,13 @@ require_once __DIR__ . '/includes/header.php';
         <article class="profile-single-card">
             <div class="profile-overview">
                 <div class="profile-summary">
-                    <label class="avatar-upload" for="profile_image" aria-label="Change profile photo">
-                        <?php if (!empty($user['profile_image'])): ?>
-                            <img class="avatar" src="<?= e($user['profile_image']) ?>" alt="Profile photo">
+                    <label class="avatar-upload" aria-label="Change profile photo">
+                        <?php if ($profileImageExists): ?>
+                            <img class="avatar" src="<?= e($profileImage) ?>" alt="Profile photo">
                         <?php else: ?>
                             <span class="avatar avatar-placeholder"></span>
                         <?php endif; ?>
+                        <input id="profile_image" class="sr-only-file" type="file" name="profile_image" accept=".jpg,.jpeg,.png,.gif,.webp" form="profile_form">
                         <span class="avatar-camera" aria-hidden="true">
                             <svg viewBox="0 0 64 48" focusable="false">
                                 <path d="M18 12 L22 5 H42 L46 12 H53 C58 12 61 15 61 20 V39 C61 44 58 47 53 47 H11 C6 47 3 44 3 39 V20 C3 15 6 12 11 12 H18 Z"></path>
@@ -170,7 +173,7 @@ require_once __DIR__ . '/includes/header.php';
             <div class="profile-edit-panel">
                 <?php if ($success): ?><div class="alert success"><?= e($success) ?></div><?php endif; ?>
                 <?php if ($dbError): ?><div class="alert error"><?= e($dbError) ?></div><?php endif; ?>
-                <form method="post" enctype="multipart/form-data" data-profile-form>
+                <form id="profile_form" method="post" enctype="multipart/form-data" data-profile-form>
                     <input type="hidden" name="profile_value_units" value="<?= e($selectedProfileUnits) ?>" data-profile-value-units>
                     <section id="profile-information" class="settings-section" data-settings-panel="profile-information">
                         <div>
@@ -199,9 +202,6 @@ require_once __DIR__ . '/includes/header.php';
                             <div class="field field-full">
                                 <label for="current_weight_kg" data-weight-label>Weight (<?= e(weight_unit($selectedProfileUnits)) ?>)</label>
                                 <input id="current_weight_kg" type="number" step="0.01" name="current_weight_kg" value="<?= e(old('current_weight_kg', $weightDisplay)) ?>" data-weight-input>
-                            </div>
-                            <div class="field">
-                                <input id="profile_image" class="sr-only-file" type="file" name="profile_image" accept=".jpg,.jpeg,.png,.gif,.webp">
                             </div>
                             <div class="field field-full">
                                 <label for="fitness_goal">Fitness Goal</label>

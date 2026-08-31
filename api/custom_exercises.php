@@ -36,7 +36,7 @@ try {
         }
 
         if (should_exclude_custom_exercise_name($exerciseName)) {
-            json_response(['error' => 'Please create one clear exercise name without SMR, stretches, or combined movements.'], 422);
+            json_response(['error' => 'Please create one clear solo exercise name without partner, SMR, stretches, or combined movements.'], 422);
         }
 
         $pdo = db();
@@ -91,7 +91,9 @@ function fetch_custom_exercises(int $userId): array
             'muscle_group' => $muscleGroup,
             'source' => 'custom',
         ];
-    }, $stmt->fetchAll());
+    }, array_values(array_filter($stmt->fetchAll(), static function (array $exercise): bool {
+        return !should_exclude_custom_exercise_name((string) $exercise['exercise_name']);
+    })));
 }
 
 function normalize_custom_value(string $value): string
@@ -112,6 +114,7 @@ function should_exclude_custom_exercise_name(string $name): bool
         || str_contains($name, '/')
         || preg_match('/^\s*hm\b/i', $name) === 1
         || preg_match('/\bgood\s+morning\b/i', $name) === 1
+        || preg_match('/\bpartner\b/i', $name) === 1
         || preg_match('/\bsmr\b/i', $name) === 1
         || preg_match('/\bstretch\b/i', $name) === 1
         || preg_match('/(?:^|[\s-])to(?:[\s-]|$)/i', $name) === 1;

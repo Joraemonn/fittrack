@@ -17,3 +17,4 @@ define('DB_USER', getenv('DB_USER') ?: 'root');
 define('DB_PASS', getenv('DB_PASS') ?: '');
 define('UPLOAD_DIR', __DIR__ . '/../uploads/profiles');
 define('API_NINJAS_KEY', getenv('API_NINJAS_KEY') ?: '7rHw1zj9lIYgBHAzzZhm1vUpqrFU3KwqdbZ4iUvO');
+define('OLLAMA_API_URL', getenv('OLLAMA_API_URL') ?: 'http://localhost:11434');

@@ -301,6 +301,7 @@ function should_exclude_exercise_name(string $name): bool
         || str_contains($name, '/')
         || preg_match('/^\s*hm\b/i', $name) === 1
         || preg_match('/\bgood\s+morning\b/i', $name) === 1
+        || preg_match('/\bpartner\b/i', $name) === 1
         || preg_match('/\bsmr\b/i', $name) === 1
         || preg_match('/\bstretch\b/i', $name) === 1
         || preg_match('/(?:^|[\s-])to(?:[\s-]|$)/i', $name) === 1;

@@ -35,6 +35,35 @@ $apiMuscles = [
     'triceps' => 'Triceps',
 ];
 
+$usesTimeMetric = static function (string $exerciseName): bool {
+    return stripos($exerciseName, 'plank') !== false;
+};
+
+$formatDurationMetric = static function (int $totalSeconds): string {
+    if ($totalSeconds <= 0) {
+        return '--';
+    }
+
+    $hours = intdiv($totalSeconds, 3600);
+    $minutes = intdiv($totalSeconds % 3600, 60);
+    $seconds = $totalSeconds % 60;
+    $parts = [];
+
+    if ($hours > 0) {
+        $parts[] = $hours . 'h';
+    }
+
+    if ($minutes > 0) {
+        $parts[] = $minutes . 'm';
+    }
+
+    if ($seconds > 0 || $parts === []) {
+        $parts[] = $seconds . 's';
+    }
+
+    return implode(' ', $parts);
+};
+
 if (!in_array($timezoneName, timezone_identifiers_list(), true)) {
     $timezoneName = 'Asia/Singapore';
 }
@@ -58,18 +87,20 @@ if (is_post()) {
         $muscleGroup = $matchedExercise['muscle_group'];
     }
 
+    $repMetricLabel = $usesTimeMetric($exerciseName) ? 'Time' : 'Reps';
+
     validate_required($errors, 'workout_date', 'Date', $workoutDate);
     validate_required($errors, 'exercise_name', 'Exercise name', $exerciseName);
     validate_required($errors, 'muscle_group', 'Muscle group', $muscleGroup);
     validate_required($errors, 'sets', 'Sets', $sets);
-    validate_required($errors, 'reps', 'Reps', $reps);
+    validate_required($errors, 'reps', $repMetricLabel, $reps);
 
     if ($sets !== '' && (!ctype_digit($sets) || (int) $sets <= 0)) {
         $errors['sets'] = 'Sets must be a positive whole number.';
     }
 
     if ($reps !== '' && (!ctype_digit($reps) || (int) $reps <= 0)) {
-        $errors['reps'] = 'Reps must be a positive whole number.';
+        $errors['reps'] = $repMetricLabel . ' must be a positive whole number.';
     }
 
     if (!$errors) {
@@ -156,9 +187,29 @@ require_once __DIR__ . '/includes/header.php';
                         <input id="sets" type="number" name="sets" value="<?= e(old('sets')) ?>">
                         <?php if (isset($errors['sets'])): ?><span class="error-text"><?= e($errors['sets']) ?></span><?php endif; ?>
                     </div>
+                    <?php $initialUsesTimeMetric = $usesTimeMetric(old('exercise_name')); ?>
                     <div class="field workout-metric-field">
-                        <label for="reps">Reps</label>
-                        <input id="reps" type="number" name="reps" value="<?= e(old('reps')) ?>">
+                        <label for="reps" data-workout-reps-label><?= $initialUsesTimeMetric ? 'Time' : 'Reps' ?></label>
+                        <input id="reps" type="<?= $initialUsesTimeMetric ? 'hidden' : 'number' ?>" name="reps" value="<?= e(old('reps')) ?>" data-workout-reps-input>
+                        <div class="workout-duration-field" data-workout-duration-field <?= $initialUsesTimeMetric ? '' : 'hidden' ?>>
+                            <button type="button" class="workout-duration-trigger" data-workout-duration-trigger>
+                                <span data-workout-duration-label>Select time</span>
+                            </button>
+                            <div class="workout-duration-picker" data-workout-duration-picker hidden>
+                                <div>
+                                    <span>Hours</span>
+                                    <div class="workout-duration-options" data-workout-duration-hours></div>
+                                </div>
+                                <div>
+                                    <span>Minutes</span>
+                                    <div class="workout-duration-options" data-workout-duration-minutes></div>
+                                </div>
+                                <div>
+                                    <span>Seconds</span>
+                                    <div class="workout-duration-options" data-workout-duration-seconds></div>
+                                </div>
+                            </div>
+                        </div>
                         <?php if (isset($errors['reps'])): ?><span class="error-text"><?= e($errors['reps']) ?></span><?php endif; ?>
                     </div>
                     <div class="field workout-metric-field">
@@ -277,6 +328,7 @@ require_once __DIR__ . '/includes/header.php';
             <?php if ($workouts): ?>
                 <div class="workout-history-list">
                     <?php foreach ($workouts as $workout): ?>
+                        <?php $isTimedWorkout = $usesTimeMetric((string) $workout['exercise_name']); ?>
                         <article class="workout-history-card">
                             <div class="workout-history-card__top">
                                 <strong><?= e($workout['exercise_name']) ?></strong>
@@ -292,8 +344,8 @@ require_once __DIR__ . '/includes/header.php';
                                     <b><?= e((string) $workout['sets']) ?></b>
                                 </span>
                                 <span>
-                                    <small>Reps</small>
-                                    <b><?= e((string) $workout['reps']) ?></b>
+                                    <small><?= $isTimedWorkout ? 'Time' : 'Reps' ?></small>
+                                    <b><?= $isTimedWorkout ? e($formatDurationMetric((int) $workout['reps'])) : e((string) $workout['reps']) ?></b>
                                 </span>
                                 <span>
                                     <small>Weight</small>
